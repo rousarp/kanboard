@@ -32,6 +32,13 @@ define('FILES_DIR', 'data/files/');
 
 Don't forget the trailing slash.
 
+Enable/disable url rewrite
+--------------------------
+
+```php
+define('ENABLE_URL_REWRITE', false);
+```
+
 Email configuration
 -------------------
 
@@ -128,6 +135,9 @@ define('LDAP_ACCOUNT_ID', 'samaccountname');
 // By default Kanboard lowercase the ldap username to avoid duplicate users (the database is case sensitive)
 // Set to true if you want to preserve the case
 define('LDAP_USERNAME_CASE_SENSITIVE', false);
+
+// Automatically create user account
+define('LDAP_ACCOUNT_CREATION', true);
 ```
 
 Google Authentication settings
@@ -195,4 +205,7 @@ define('MARKDOWN_ESCAPE_HTML', true);
 
 // API alternative authentication header, the default is HTTP Basic Authentication defined in RFC2617
 define('API_AUTHENTICATION_HEADER', '');
+
+// Hide login form, useful if all your users use Google/Github/ReverseProxy authentication
+define('HIDE_LOGIN_FORM', false);
 ```

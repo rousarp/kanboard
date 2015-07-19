@@ -10,7 +10,7 @@
                 'changeCategory',
                 array('task_id' => $task['id'], 'project_id' => $task['project_id']),
                 false,
-                'task-board-popover' . (! empty($task['category_description']) ? ' column-tooltip' : ''),
+                'task-board-popover' . (! empty($task['category_description']) ? ' tooltip' : ''),
                 ! empty($task['category_description']) ? $this->text->markdown($task['category_description']) : t('Change category')
             ) ?>
         <?php endif ?>
@@ -21,7 +21,8 @@
 <div class="task-board-icons">
     <?php if (! empty($task['date_due'])): ?>
         <span class="task-board-date <?= time() > $task['date_due'] ? 'task-board-date-overdue' : '' ?>">
-            <i class="fa fa-calendar"></i>&nbsp;<?= dt('%b %e', $task['date_due']) ?>
+            <i class="fa fa-calendar"></i>
+            <?= (date('Y') === date('Y', $task['date_due']) ? dt('%b %e', $task['date_due']) : dt('%b %e %Y', $task['date_due'])) ?>
         </span>
     <?php endif ?>
 

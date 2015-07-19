@@ -137,12 +137,13 @@ ul.form-errors li {
     display: inline;
 }
 
+input.form-datetime,
 input.form-date {
     width: 150px;
 }
 
 input.form-input-large {
-    width: 450px;
+    width: 400px;
 }
 
 .form-row {

@@ -1,4 +1,3 @@
-// Common functions
 var Kanboard = (function() {
 
     jQuery(document).ready(function() {
@@ -40,7 +39,7 @@ var Kanboard = (function() {
                 $("body").append('<div id="popover-container"><div id="popover-content">' + content + '</div></div>');
 
                 $("#popover-container").click(function() {
-                    $(this).remove();
+                    Kanboard.ClosePopover();
                 });
 
                 $("#popover-content").click(function(e) {
@@ -49,17 +48,22 @@ var Kanboard = (function() {
 
                 $(".close-popover").click(function(e) {
                     e.preventDefault();
-                    $('#popover-container').remove();
+                    Kanboard.ClosePopover();
                 });
 
-                Mousetrap.bind("esc", function() {
-                    $('#popover-container').remove();
+                Mousetrap.bindGlobal("esc", function() {
+                    Kanboard.ClosePopover();
                 });
 
                 if (callback) {
                     callback();
                 }
             });
+        },
+
+        ClosePopover: function() {
+            $('#popover-container').remove();
+            Kanboard.Screenshot.Destroy();
         },
 
         // Return true if the page is visible
@@ -186,17 +190,100 @@ var Kanboard = (function() {
             // Check the session every 60s
             window.setInterval(Kanboard.CheckSession, 60000);
 
-            // Keyboard shortcuts
+            // Submit form
             Mousetrap.bindGlobal("mod+enter", function() {
                 $("form").submit();
             });
 
+            // Open board selector
             Mousetrap.bind("b", function(e) {
                 e.preventDefault();
                 $('#board-selector').trigger('chosen:open');
             });
 
+            // Focus to the search box
+            Mousetrap.bind("f", function(e) {
+                e.preventDefault();
+
+                var input = document.getElementById("form-search");
+
+                if (input) {
+                    input.focus();
+                }
+            });
+
+            // Switch view mode for projects: go to the board
+            Mousetrap.bind("v b", function(e) {
+                var link = $(".view-board");
+
+                if (link.length) {
+                    window.location = link.attr('href');
+                }
+            });
+
+            // Switch view mode for projects: go to the calendar
+            Mousetrap.bind("v c", function(e) {
+                var link = $(".view-calendar");
+
+                if (link.length) {
+                    window.location = link.attr('href');
+                }
+            });
+
+            // Switch view mode for projects: go to the listing
+            Mousetrap.bind("v l", function(e) {
+                var link = $(".view-listing");
+
+                if (link.length) {
+                    window.location = link.attr('href');
+                }
+            });
+
+            // Place cursor at the end when focusing on the search box
+            $(document).on("focus", "#form-search", function() {
+                if ($("#form-search")[0].setSelectionRange) {
+                   $('#form-search')[0].setSelectionRange($('#form-search').val().length, $('#form-search').val().length);
+                }
+            });
+
+            // Filter helper for search
+            $(document).on("click", ".filter-helper", function (e) {
+               e.preventDefault();
+               $("#form-search").val($(this).data("filter"));
+               $("form.search").submit();
+            });
+
+            // Collapse sidebar
+            $(document).on("click", ".sidebar-collapse", function (e) {
+               e.preventDefault();
+               $(".sidebar-container").addClass("sidebar-collapsed");
+               $(".sidebar-expand").show();
+               $(".sidebar h2").hide();
+               $(".sidebar ul").hide();
+               $(".sidebar-collapse").hide();
+            });
+
+            // Expand sidebar
+            $(document).on("click", ".sidebar-expand", function (e) {
+               e.preventDefault();
+               $(".sidebar-container").removeClass("sidebar-collapsed");
+               $(".sidebar-collapse").show();
+               $(".sidebar h2").show();
+               $(".sidebar ul").show();
+               $(".sidebar-expand").hide();
+            });
+
+            $("select.task-reload-project-destination").change(function() {
+                window.location = $(this).data("redirect").replace(/PROJECT_ID/g, $(this).val());
+            });
+
+            // Datepicker translation
             $.datepicker.setDefaults($.datepicker.regional[$("body").data("js-lang")]);
+
+            // Alert box fadeout
+            $(".alert-fade-out").delay(4000).fadeOut(800, function() {
+                $(this).remove();
+            });
 
             Kanboard.InitAfterAjax();
         },
@@ -216,6 +303,15 @@ var Kanboard = (function() {
                 showOtherMonths: true,
                 selectOtherMonths: true,
                 dateFormat: 'yy-mm-dd',
+                constrainInput: false
+            });
+
+            // Datetime picker
+            $(".form-datetime").datetimepicker({
+                controlType: 'select',
+                oneLine: true,
+                dateFormat: 'yy-mm-dd',
+                // timeFormat: 'h:mm tt',
                 constrainInput: false
             });
 
@@ -252,7 +348,7 @@ var Kanboard = (function() {
             }
 
             // Tooltip for column description
-            $(".column-tooltip").tooltip({
+            $(".tooltip").tooltip({
                 content: function() {
                     return '<div class="markdown">' + $(this).attr("title") + '</div>';
                 },
@@ -268,7 +364,7 @@ var Kanboard = (function() {
                         $("<div>")
                             .addClass("tooltip-arrow")
                             .addClass(feedback.vertical)
-                            .addClass(arrow_pos == 0 ? "align-left" : "align-right")
+                            .addClass(arrow_pos < 1 ? "align-left" : "align-right")
                             .appendTo(this);
                     }
                 }

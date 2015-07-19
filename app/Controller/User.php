@@ -60,7 +60,9 @@ class User extends Base
      */
     public function create(array $values = array(), array $errors = array())
     {
-        $this->response->html($this->template->layout('user/new', array(
+        $is_remote = $this->request->getIntegerParam('remote') == 1 || (isset($values['is_ldap_user']) && $values['is_ldap_user'] == 1);
+
+        $this->response->html($this->template->layout($is_remote ? 'user/create_remote' : 'user/create_local', array(
             'timezones' => $this->config->getTimezones(true),
             'languages' => $this->config->getLanguages(true),
             'board_selector' => $this->projectPermission->getAllowedProjects($this->userSession->getId()),
@@ -178,7 +180,7 @@ class User extends Base
         $this->checkCSRFParam();
         $user = $this->getUser();
         $this->authentication->backend('rememberMe')->remove($this->request->getIntegerParam('id'));
-        $this->response->redirect('?controller=user&action=sessions&user_id='.$user['id']);
+        $this->response->redirect($this->helper->url->to('user', 'session', array('user_id' => $user['id'])));
     }
 
     /**
@@ -194,7 +196,7 @@ class User extends Base
             $values = $this->request->getValues();
             $this->notification->saveSettings($user['id'], $values);
             $this->session->flash(t('User updated successfully.'));
-            $this->response->redirect('?controller=user&action=notifications&user_id='.$user['id']);
+            $this->response->redirect($this->helper->url->to('user', 'notifications', array('user_id' => $user['id'])));
         }
 
         $this->response->html($this->layout('user/notifications', array(
@@ -272,7 +274,7 @@ class User extends Base
                     $this->session->flashError(t('Unable to change the password.'));
                 }
 
-                $this->response->redirect('?controller=user&action=show&user_id='.$user['id']);
+                $this->response->redirect($this->helper->url->to('user', 'show', array('user_id' => $user['id'])));
             }
         }
 
@@ -298,7 +300,7 @@ class User extends Base
 
         if ($this->request->isPost()) {
 
-            $values = $this->request->getValues() + array('disable_login_form' => 0);
+            $values = $this->request->getValues();
 
             if ($this->userSession->isAdmin()) {
                 $values += array('is_admin' => 0);
@@ -321,7 +323,7 @@ class User extends Base
                     $this->session->flashError(t('Unable to update your user.'));
                 }
 
-                $this->response->redirect('?controller=user&action=show&user_id='.$user['id']);
+                $this->response->redirect($this->helper->url->to('user', 'show', array('user_id' => $user['id'])));
             }
         }
 
@@ -331,6 +333,44 @@ class User extends Base
             'user' => $user,
             'timezones' => $this->config->getTimezones(true),
             'languages' => $this->config->getLanguages(true),
+        )));
+    }
+
+    /**
+     * Display a form to edit authentication
+     *
+     * @access public
+     */
+    public function authentication()
+    {
+        $user = $this->getUser();
+        $values = $user;
+        $errors = array();
+
+        unset($values['password']);
+
+        if ($this->request->isPost()) {
+
+            $values = $this->request->getValues() + array('disable_login_form' => 0, 'is_ldap_user' => 0);
+            list($valid, $errors) = $this->user->validateModification($values);
+
+            if ($valid) {
+
+                if ($this->user->update($values)) {
+                    $this->session->flash(t('User updated successfully.'));
+                }
+                else {
+                    $this->session->flashError(t('Unable to update your user.'));
+                }
+
+                $this->response->redirect($this->helper->url->to('user', 'authentication', array('user_id' => $user['id'])));
+            }
+        }
+
+        $this->response->html($this->layout('user/authentication', array(
+            'values' => $values,
+            'errors' => $errors,
+            'user' => $user,
         )));
     }
 
@@ -353,139 +393,11 @@ class User extends Base
                 $this->session->flashError(t('Unable to remove this user.'));
             }
 
-            $this->response->redirect('?controller=user');
+            $this->response->redirect($this->helper->url->to('user', 'index'));
         }
 
         $this->response->html($this->layout('user/remove', array(
             'user' => $user,
         )));
-    }
-
-    /**
-     * Google authentication
-     *
-     * @access public
-     */
-    public function google()
-    {
-        $code = $this->request->getStringParam('code');
-
-        if ($code) {
-
-            $profile = $this->authentication->backend('google')->getGoogleProfile($code);
-
-            if (is_array($profile)) {
-
-                // If the user is already logged, link the account otherwise authenticate
-                if ($this->userSession->isLogged()) {
-
-                    if ($this->authentication->backend('google')->updateUser($this->userSession->getId(), $profile)) {
-                        $this->session->flash(t('Your Google Account is linked to your profile successfully.'));
-                    }
-                    else {
-                        $this->session->flashError(t('Unable to link your Google Account.'));
-                    }
-
-                    $this->response->redirect('?controller=user&action=external&user_id='.$this->userSession->getId());
-                }
-                else if ($this->authentication->backend('google')->authenticate($profile['id'])) {
-                    $this->response->redirect('?controller=app');
-                }
-                else {
-                    $this->response->html($this->template->layout('auth/index', array(
-                        'errors' => array('login' => t('Google authentication failed')),
-                        'values' => array(),
-                        'no_layout' => true,
-                        'redirect_query' => '',
-                        'title' => t('Login')
-                    )));
-                }
-            }
-        }
-
-        $this->response->redirect($this->authentication->backend('google')->getAuthorizationUrl());
-    }
-
-    /**
-     * Unlink a Google account
-     *
-     * @access public
-     */
-    public function unlinkGoogle()
-    {
-        $this->checkCSRFParam();
-        if ($this->authentication->backend('google')->unlink($this->userSession->getId())) {
-            $this->session->flash(t('Your Google Account is not linked anymore to your profile.'));
-        }
-        else {
-            $this->session->flashError(t('Unable to unlink your Google Account.'));
-        }
-
-        $this->response->redirect('?controller=user&action=external&user_id='.$this->userSession->getId());
-    }
-
-    /**
-     * GitHub authentication
-     *
-     * @access public
-     */
-    public function github()
-    {
-        $code = $this->request->getStringParam('code');
-
-        if ($code) {
-            $profile = $this->authentication->backend('gitHub')->getGitHubProfile($code);
-
-            if (is_array($profile)) {
-
-                // If the user is already logged, link the account otherwise authenticate
-                if ($this->userSession->isLogged()) {
-
-                    if ($this->authentication->backend('gitHub')->updateUser($this->userSession->getId(), $profile)) {
-                        $this->session->flash(t('Your GitHub account was successfully linked to your profile.'));
-                    }
-                    else {
-                        $this->session->flashError(t('Unable to link your GitHub Account.'));
-                    }
-
-                    $this->response->redirect('?controller=user&action=external&user_id='.$this->userSession->getId());
-                }
-                else if ($this->authentication->backend('gitHub')->authenticate($profile['id'])) {
-                    $this->response->redirect('?controller=app');
-                }
-                else {
-                    $this->response->html($this->template->layout('auth/index', array(
-                        'errors' => array('login' => t('GitHub authentication failed')),
-                        'values' => array(),
-                        'no_layout' => true,
-                        'redirect_query' => '',
-                        'title' => t('Login')
-                    )));
-                }
-            }
-        }
-
-        $this->response->redirect($this->authentication->backend('gitHub')->getAuthorizationUrl());
-    }
-
-    /**
-     * Unlink a GitHub account
-     *
-     * @access public
-     */
-    public function unlinkGithub()
-    {
-        $this->checkCSRFParam();
-
-        $this->authentication->backend('gitHub')->revokeGitHubAccess();
-
-        if ($this->authentication->backend('gitHub')->unlink($this->userSession->getId())) {
-            $this->session->flash(t('Your GitHub account is no longer linked to your profile.'));
-        }
-        else {
-            $this->session->flashError(t('Unable to unlink your GitHub Account.'));
-        }
-
-        $this->response->redirect('?controller=user&action=external&user_id='.$this->userSession->getId());
     }
 }

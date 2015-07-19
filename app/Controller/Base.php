@@ -67,6 +67,7 @@ abstract class Base extends \Core\Base
 
             $this->container['logger']->debug('SQL_QUERIES={nb}', array('nb' => $this->container['db']->nbQueries));
             $this->container['logger']->debug('RENDERING={time}', array('time' => microtime(true) - @$_SERVER['REQUEST_TIME_FLOAT']));
+            $this->container['logger']->debug('MEMORY='.$this->helper->text->bytes(memory_get_usage()));
             $this->container['logger']->debug('END_REQUEST='.$_SERVER['REQUEST_URI']);
         }
     }
@@ -101,7 +102,7 @@ abstract class Base extends \Core\Base
     public function beforeAction($controller, $action)
     {
         // Start the session
-        $this->session->open(BASE_URL_DIRECTORY);
+        $this->session->open($this->helper->url->dir());
         $this->sendHeaders($action);
         $this->container['dispatcher']->dispatch('session.bootstrap', new Event);
 
@@ -127,7 +128,8 @@ abstract class Base extends \Core\Base
                 $this->response->text('Not Authorized', 401);
             }
 
-            $this->response->redirect($this->helper->url->to('auth', 'login', array('redirect_query' => urlencode($this->request->getQueryString()))));
+            $this->session['login_redirect'] = $this->request->getUri();
+            $this->response->redirect($this->helper->url->to('auth', 'login'));
         }
     }
 
@@ -223,17 +225,6 @@ abstract class Base extends \Core\Base
     }
 
     /**
-     * Redirection when there is no project in the database
-     *
-     * @access protected
-     */
-    protected function redirectNoProject()
-    {
-        $this->session->flash(t('There is no active project, the first step is to create a new project.'));
-        $this->response->redirect('?controller=project&action=create');
-    }
-
-    /**
      * Common layout for task views
      *
      * @access protected
@@ -301,7 +292,7 @@ abstract class Base extends \Core\Base
 
         if (empty($project)) {
             $this->session->flashError(t('Project not found.'));
-            $this->response->redirect('?controller=project');
+            $this->response->redirect($this->helper->url->to('project', 'index'));
         }
 
         return $project;
@@ -326,5 +317,34 @@ abstract class Base extends \Core\Base
         }
 
         return $user;
+    }
+
+    /**
+     * Common method to get project filters
+     *
+     * @access protected
+     */
+    protected function getProjectFilters($controller, $action)
+    {
+        $project = $this->getProject();
+        $search = $this->request->getStringParam('search', $this->userSession->getFilters($project['id']));
+        $board_selector = $this->projectPermission->getAllowedProjects($this->userSession->getId());
+        unset($board_selector[$project['id']]);
+
+        $filters = array(
+            'controller' => $controller,
+            'action' => $action,
+            'project_id' => $project['id'],
+            'search' => urldecode($search),
+        );
+
+        $this->userSession->setFilters($project['id'], $filters['search']);
+
+        return array(
+            'project' => $project,
+            'board_selector' => $board_selector,
+            'filters' => $filters,
+            'title' => $project['name'],
+        );
     }
 }

@@ -3,6 +3,7 @@
 namespace ServiceProvider;
 
 use Core\Paginator;
+use Core\OAuth2;
 use Model\Config;
 use Model\Project;
 use Model\Webhook;
@@ -33,7 +34,8 @@ class ClassProvider implements ServiceProviderInterface
             'ProjectActivity',
             'ProjectAnalytic',
             'ProjectDuplication',
-            'ProjectDailySummary',
+            'ProjectDailyColumnStats',
+            'ProjectDailyStats',
             'ProjectIntegration',
             'ProjectPermission',
             'Subtask',
@@ -42,6 +44,7 @@ class ClassProvider implements ServiceProviderInterface
             'SubtaskTimeTracking',
             'Swimlane',
             'Task',
+            'TaskAnalytic',
             'TaskCreation',
             'TaskDuplication',
             'TaskExport',
@@ -70,6 +73,7 @@ class ClassProvider implements ServiceProviderInterface
             'Lexer',
             'MemoryCache',
             'Request',
+            'Router',
             'Session',
             'Template',
         ),
@@ -103,6 +107,10 @@ class ClassProvider implements ServiceProviderInterface
 
         $container['paginator'] = $container->factory(function ($c) {
             return new Paginator($c);
+        });
+
+        $container['oauth'] = $container->factory(function ($c) {
+            return new OAuth2($c);
         });
     }
 }

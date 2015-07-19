@@ -26,6 +26,7 @@ Using Kanboard
 
 - [Creating tasks](creating-tasks.markdown)
 - [Closing tasks](closing-tasks.markdown)
+- [Duplicate and move tasks](duplicate-move-tasks.markdown)
 - [Adding screenshots](screenshots.markdown)
 - [Task links](task-links.markdown)
 - [Transitions](transitions.markdown)
@@ -33,6 +34,7 @@ Using Kanboard
 - [Recurring tasks](recurring-tasks.markdown)
 - [Create tasks by email](create-tasks-by-email.markdown)
 - [Subtasks](subtasks.markdown)
+- [Analytics for tasks](analytics-tasks.markdown)
 
 ### Working with users
 
@@ -81,6 +83,7 @@ Technical details
 
 ### Installation
 
+- [Recommended configuration](recommended-configuration.markdown)
 - [Installation instructions](installation.markdown)
 - [Upgrade Kanboard to a new version](update.markdown)
 - [Installation on Ubuntu](ubuntu-installation.markdown)
@@ -96,6 +99,7 @@ Technical details
 ### Configuration
 
 - [Email configuration](email-configuration.markdown)
+- [URL rewriting](nice-urls.markdown)
 
 ### Database
 
@@ -107,7 +111,7 @@ Technical details
 
 - [LDAP authentication](ldap-authentication.markdown)
 - [Google authentication](google-authentication.markdown)
-- [GitHub authentication](github-authentication.markdown)
+- [Github authentication](github-authentication.markdown)
 - [Reverse proxy authentication](reverse-proxy-authentication.markdown)
 
 ### Contributors

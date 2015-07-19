@@ -28,16 +28,23 @@ class Lexer
         "/^(assignee:)/"                                 => 'T_ASSIGNEE',
         "/^(color:)/"                                    => 'T_COLOR',
         "/^(due:)/"                                      => 'T_DUE',
+        "/^(updated:)/"                                  => 'T_UPDATED',
+        "/^(modified:)/"                                 => 'T_UPDATED',
+        "/^(created:)/"                                  => 'T_CREATED',
         "/^(status:)/"                                   => 'T_STATUS',
         "/^(description:)/"                              => 'T_DESCRIPTION',
         "/^(category:)/"                                 => 'T_CATEGORY',
         "/^(column:)/"                                   => 'T_COLUMN',
         "/^(project:)/"                                  => 'T_PROJECT',
+        "/^(swimlane:)/"                                 => 'T_SWIMLANE',
+        "/^(ref:)/"                                      => 'T_REFERENCE',
+        "/^(reference:)/"                                => 'T_REFERENCE',
         "/^(\s+)/"                                       => 'T_WHITESPACE',
         '/^([<=>]{0,2}[0-9]{4}-[0-9]{2}-[0-9]{2})/'      => 'T_DATE',
         '/^(yesterday|tomorrow|today)/'                  => 'T_DATE',
         '/^("(.*?)")/'                                   => 'T_STRING',
         "/^(\w+)/"                                       => 'T_STRING',
+        "/^(#\d+)/"                                      => 'T_STRING',
     );
 
     /**
@@ -113,6 +120,7 @@ class Lexer
                 case 'T_CATEGORY':
                 case 'T_COLUMN':
                 case 'T_PROJECT':
+                case 'T_SWIMLANE':
                     $next = next($tokens);
 
                     if ($next !== false && $next['token'] === 'T_STRING') {
@@ -123,7 +131,10 @@ class Lexer
 
                 case 'T_STATUS':
                 case 'T_DUE':
+                case 'T_UPDATED':
+                case 'T_CREATED':
                 case 'T_DESCRIPTION':
+                case 'T_REFERENCE':
                     $next = next($tokens);
 
                     if ($next !== false && ($next['token'] === 'T_DATE' || $next['token'] === 'T_STRING')) {
